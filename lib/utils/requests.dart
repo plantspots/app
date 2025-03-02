@@ -4,12 +4,14 @@ import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 Future<Map<String, dynamic>> getData(String domain, String path, Map<String, dynamic> data) async {
+  // print("a");
   final response = await http.get(
     Uri.https(domain, path, data),
     headers: <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
     },
     );
+    // log(response.body);
   final res = jsonDecode(response.body) as Map<String, dynamic>;
   res["status_code"] = response.statusCode;
   return res;

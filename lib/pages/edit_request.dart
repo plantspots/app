@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -9,32 +10,35 @@ import 'package:plantspots/api/requests.dart';
 import 'package:plantspots/pages/requests.dart';
 import 'package:plantspots/utils/vars.dart';
 
-class CreateRequestPage extends StatefulWidget {
+class EditRequestPage extends StatefulWidget {
   final String hash;
   final String username;
   final String email;
   final String phone;
   final Map<String, dynamic> tier;
+  final int id;
 
-  const CreateRequestPage({
+  const EditRequestPage({
     super.key,
     required this.hash,
     required this.username,
     required this.email,
     required this.phone,
     required this.tier,
+    required this.id,
   });
 
   @override
-  State<CreateRequestPage> createState() => _CreateRequestPageState();
+  State<EditRequestPage> createState() => _EditRequestPageState();
 }
 
-class _CreateRequestPageState extends State<CreateRequestPage> {
+class _EditRequestPageState extends State<EditRequestPage> {
 
   String hash = "";
   String username = "";
   String email = "";
   String phone = "";
+  late int id;
   late Map<String, dynamic> tier;
 
   int? type = 0;
@@ -47,7 +51,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
   String errorMessage = "";
   // double errorMessagePadding = 0;
   double errorMessageSize = 0; // 0 or 15
-  bool buttonEnabled = true;
+  bool buttonEnabled = false;
+
+  bool loading = false;
 
   List<String> images = [];
 
@@ -106,7 +112,7 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
     }
   }
 
-  void createRequest() {
+  void editRequest() {
     final title = titleController.text.trim();
     final description = descriptionController.text.trim();
 
@@ -134,7 +140,41 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       return;
     }
 
-    createRequestAPI(hash, title, description, type!, emailContact!, phoneContact!, images).then((res) {
+    updateRequestAPI(hash, id, title, description, type!, emailContact!, phoneContact!, images).then((res) {
+      if (mounted) {
+        if (res["status_code"] != 200) {
+          setState(() {
+            errorMessage = res["error_message"];
+            errorMessageSize = 15;
+            buttonEnabled = true;
+          });
+        } else {
+          Navigator.of(context).pushAndRemoveUntil(
+              PageTransition(
+                  type: PageTransitionType.fade,
+                  child: RequestsPage(
+                    hash: hash,
+                    username: username,
+                    email: email,
+                    phone: phone,
+                    tier: tier,
+                  ),
+                  childCurrent: context.currentRoute), (route) {
+            return false;
+          });
+        }
+      }
+    });
+  }
+
+  void closeRequest() {
+    setState(() {
+      buttonEnabled = false;
+      errorMessage = "";
+      errorMessageSize = 0;
+    });
+
+    closeRequestAPI(hash, id,).then((res) {
       if (mounted) {
         if (res["status_code"] != 200) {
           setState(() {
@@ -177,6 +217,42 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
       email = widget.email;
       phone = widget.phone;
       tier = widget.tier;
+      id = widget.id;
+
+      loading = true;
+      getRequestAPI(hash, id).then((res) {
+        if (res["status_code"] != 200) {
+          setState(() {
+            firstTime = true;
+          });
+        } else {
+          setState(() {
+            titleController.text = res["title"];
+            descriptionController.text = res["description"];
+            // log(res["type"]["type"]);
+            // log(res["email_contact"]);
+            // log(res["phone_contact"]);
+            type = res["type"]["identification_number"];
+            emailContact = res["email_contact"];
+            phoneContact = res["phone_contact"];
+            // type = int.parse(res["type"]["type"]);
+            // log(res["email_contact"]);
+            // emailContact = bool.parse(res["email_contact"]);
+            // phoneContact = bool.parse(res["phone_contact"]);
+
+            List<dynamic> tempImages = res["images"];
+            // log(tempImages.length as String);
+            images = [];
+
+            for (dynamic image in tempImages) {
+              images.add(image["image"]);
+            }
+
+            loading = false;
+            buttonEnabled = true;
+          });
+        }
+      });
 
       firstTime = false;
     }
@@ -192,7 +268,19 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
           child: FractionallySizedBox(
             widthFactor: 1,
             child: Column(
-              children: [
+              children: loading ? [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 15),
+                    child: Text(
+                      "Create Request",
+                      style: TextStyle(fontSize: 36, color: textColor),
+                    ),
+                  ),
+                ),
+                CircularProgressIndicator()
+              ] : [
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
@@ -376,9 +464,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                       children: images.isNotEmpty
                           ? [
                               OutlinedButton(
-                                onPressed: buttonEnabled ? () {
+                                onPressed: () {
                                   pickImage();
-                                } : null,
+                                },
                                 style: OutlinedButton.styleFrom(
                                     shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(2)),
@@ -414,9 +502,9 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                             ]
                           : [
                               OutlinedButton(
-                                onPressed: () {
+                                onPressed: buttonEnabled ? () {
                                   pickImage();
-                                },
+                                } : null,
                                 style: OutlinedButton.styleFrom(
                                     shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(2)),
@@ -444,15 +532,32 @@ class _CreateRequestPageState extends State<CreateRequestPage> {
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: OutlinedButton(
-                    onPressed: buttonEnabled ? createRequest : null,
-                    style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(2)),
-                        side: BorderSide(color: darkBackgroundColor),
-                        foregroundColor: darkBackgroundColor,
-                        backgroundColor: backgroundColor),
-                    child: Text("Create Request"),
+                  child: Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: buttonEnabled ? editRequest : null,
+                        style: OutlinedButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(2)),
+                            side: BorderSide(color: darkBackgroundColor),
+                            foregroundColor: darkBackgroundColor,
+                            backgroundColor: backgroundColor),
+                        child: Text("Save Request"),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: OutlinedButton(
+                          onPressed: buttonEnabled ? closeRequest : null,
+                          style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(2)),
+                              side: BorderSide(color: darkBackgroundColor),
+                              foregroundColor: darkBackgroundColor,
+                              backgroundColor: backgroundColor),
+                          child: Text("Close Request"),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

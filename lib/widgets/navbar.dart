@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 import 'package:plantspots/pages/home.dart';
 import 'package:plantspots/pages/requests.dart';
+import 'package:plantspots/pages/settings.dart';
+import 'package:plantspots/pages/sterling.dart';
 
 class NavbarWidget extends StatefulWidget {
   final int index;
@@ -57,6 +59,34 @@ class _NavbarWidgetState extends State<NavbarWidget> {
               PageTransition(
                   type: PageTransitionType.fade,
                   child: RequestsPage(
+                    hash: hash,
+                    username: username,
+                    email: email,
+                    phone: phone,
+                    tier: tier,
+                  ),
+                  childCurrent: context.currentRoute), (route) {
+            return false;
+          });
+        case 2:
+          Navigator.of(context).pushAndRemoveUntil(
+              PageTransition(
+                  type: PageTransitionType.fade,
+                  child: SterlingPage(
+                    hash: hash,
+                    username: username,
+                    email: email,
+                    phone: phone,
+                    tier: tier,
+                  ),
+                  childCurrent: context.currentRoute), (route) {
+            return false;
+          });
+        case 3:
+          Navigator.of(context).pushAndRemoveUntil(
+              PageTransition(
+                  type: PageTransitionType.fade,
+                  child: SettingsPage(
                     hash: hash,
                     username: username,
                     email: email,

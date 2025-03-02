@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:plantspots/pages/create_account.dart';
 import 'package:plantspots/pages/create_request.dart';
+import 'package:plantspots/pages/edit_request.dart';
 import 'package:plantspots/pages/home.dart';
 import 'package:plantspots/pages/login.dart';
 import 'package:plantspots/pages/requests.dart';
+import 'package:plantspots/pages/settings.dart';
+import 'package:plantspots/pages/sterling.dart';
+import 'package:plantspots/pages/view_request.dart';
 
 void main() {
   runApp(const MyApp());
@@ -45,6 +49,10 @@ class MyApp extends StatelessWidget {
         "/home": (context) => const HomePage(hash: "", username: "", email: "", phone: "", tier: {},),
         "/requests": (context) => const RequestsPage(hash: "", username: "", email: "", phone: "", tier: {},),
         "/create-request": (context) => const CreateRequestPage(hash: "", username: "", email: "", phone: "", tier: {},),
+        "/edit-request": (context) => const EditRequestPage(hash: "", username: "", email: "", phone: "", tier: {}, id: 0,),
+        "/view-request": (context) => const ViewRequestPage(hash: "", username: "", email: "", phone: "", tier: {}, id: 0,),
+        "/sterling": (context) => const SterlingPage(hash: "", username: "", email: "", phone: "", tier: {},),
+        "/settings": (context) => const SettingsPage(hash: "", username: "", email: "", phone: "", tier: {},),
       },
     );
   }

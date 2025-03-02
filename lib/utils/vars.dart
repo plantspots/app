@@ -12,6 +12,7 @@ const textColor = Color.fromRGBO(0, 0, 0, 1);
 const softTextColor = Color.fromRGBO(8, 16, 0, 1);
 const backgroundColor = Color.fromRGBO(255, 255, 255, 1);
 const softBackgroundColor = Color.fromRGBO(245, 255, 235, 1);
+const mediumBackgroundColor = Color.fromRGBO(214, 255, 173, 1);
 const darkBackgroundColor = Color.fromRGBO(24, 48, 0, 1);
 
 const errorColor = Color.fromRGBO(224, 67, 0, 1);
